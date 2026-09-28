@@ -1,0 +1,19 @@
+{
+  "name": "aw-codex-policy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Agent Wrangler extension: pick Codex's sandbox, approval policy, approve-for-me and bypass per session.",
+  "wranglerExtension": {
+    "id": "aw-codex-policy",
+    "label": "Codex sandbox & approvals",
+    "description": "Pick Codex's sandbox, approval policy, approve-for-me and bypass per session, from the dispatch dialog's Advanced options.",
+    "requires": []
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
