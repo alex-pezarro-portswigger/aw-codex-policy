@@ -13,7 +13,7 @@ function stub(id) {
   };
 }
 
-function mountContribution() {
+function mountContribution(settings = {}) {
   let contribution = null;
   client.register({ register: (slot, c) => { assert.equal(slot, 'dispatch.field'); contribution = c; } });
   const nodes = {};
@@ -21,7 +21,7 @@ function mountContribution() {
     innerHTML: '', hidden: false,
     querySelector: (sel) => (nodes[sel.slice(1)] ||= stub(sel.slice(1))),
   };
-  contribution.mount(host);
+  contribution.mount(host, { settings: () => ({ ...settings }) });
   return { contribution, host, n: (id) => nodes[`acp-${id}`] };
 }
 
@@ -40,13 +40,14 @@ test('the field is Codex-only', () => {
   assert.equal(contribution.ext(host), null);
   contribution.update(host, ctx('codex'));
   assert.equal(host.hidden, false);
-  assert.deepEqual(contribution.ext(host), {});
+  assert.deepEqual(contribution.ext(host), { sandbox: '', approval: '', approveForMe: false, bypass: false });
 });
 
-test('no prefill: switching to Codex starts empty, edits survive re-renders', () => {
-  const { contribution, host, n } = mountContribution();
+test('switching to Codex prefills from settings, edits survive re-renders', () => {
+  const { contribution, host, n } = mountContribution({ approval: 'on-request' });
   contribution.update(host, ctx('codex'));
   assert.equal(n('sandbox').value, '');
+  assert.equal(n('approval').value, 'on-request');
   n('sandbox').value = 'read-only';
   contribution.update(host, ctx('codex'));
   assert.equal(n('sandbox').value, 'read-only');
@@ -55,13 +56,22 @@ test('no prefill: switching to Codex starts empty, edits survive re-renders', ()
   assert.equal(n('sandbox').value, '');
 });
 
-test('ext() leaves out empty values', () => {
+test('a toggle on in settings can be turned off for one dispatch', () => {
+  const { contribution, host, n } = mountContribution({ bypass: true });
+  contribution.update(host, ctx('codex'));
+  assert.equal(n('bypass').checked, true);
+  n('bypass').checked = false;
+  n('bypass').change();
+  assert.deepEqual(contribution.ext(host), { sandbox: '', approval: '', approveForMe: false, bypass: false });
+});
+
+test('ext() sends every field', () => {
   const { contribution, host, n } = mountContribution();
   contribution.update(host, ctx('codex'));
   n('sandbox').value = 'read-only';
-  assert.deepEqual(contribution.ext(host), { sandbox: 'read-only' });
+  assert.deepEqual(contribution.ext(host), { sandbox: 'read-only', approval: '', approveForMe: false, bypass: false });
   n('approval').value = 'on-request';
-  assert.deepEqual(contribution.ext(host), { sandbox: 'read-only', approval: 'on-request' });
+  assert.deepEqual(contribution.ext(host), { sandbox: 'read-only', approval: 'on-request', approveForMe: false, bypass: false });
 });
 
 test('approve-for-me stands alone and disables the selects', () => {
@@ -72,7 +82,7 @@ test('approve-for-me stands alone and disables the selects', () => {
   n('approve-for-me').change();
   assert.equal(n('sandbox').disabled, true);
   assert.equal(n('approval').disabled, true);
-  assert.deepEqual(contribution.ext(host), { approveForMe: true });
+  assert.deepEqual(contribution.ext(host), { sandbox: '', approval: '', approveForMe: true, bypass: false });
 });
 
 test('bypass shows the danger note, disables the rest and wins', () => {
@@ -85,7 +95,7 @@ test('bypass shows the danger note, disables the rest and wins', () => {
   assert.equal(n('danger').hidden, false);
   assert.equal(n('sandbox').disabled, true);
   assert.equal(n('approve-for-me').disabled, true);
-  assert.deepEqual(contribution.ext(host), { bypass: true });
+  assert.deepEqual(contribution.ext(host), { sandbox: '', approval: '', approveForMe: false, bypass: true });
   n('bypass').checked = false;
   n('bypass').change();
   assert.equal(n('danger').hidden, true);

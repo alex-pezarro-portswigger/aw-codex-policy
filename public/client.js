@@ -1,20 +1,20 @@
 // Browser half. One `dispatch.field` contribution in Advanced options, shown
-// only for a Codex draft. The board hands a client no way to read its own
-// extension settings, so nothing is prefilled: an empty select or an unticked
-// box means "use the settings default", which the server half applies.
+// only for a Codex draft. It prefills from this extension's settings
+// (api.settings(), host API 1.13.0) and sends every value explicitly, so the
+// dialog's choice is the whole policy: an empty select means core's default.
 
 const MARKUP = `
 <div class="acp-field">
   <label for="acp-sandbox">Codex sandbox</label>
   <select id="acp-sandbox">
-    <option value="">Default</option>
+    <option value="">Core default (workspace-write)</option>
     <option value="read-only">read-only</option>
     <option value="workspace-write">workspace-write</option>
     <option value="danger-full-access">danger-full-access</option>
   </select>
   <label for="acp-approval">Codex approvals</label>
   <select id="acp-approval">
-    <option value="">Default</option>
+    <option value="">Core default (never)</option>
     <option value="on-request">on-request</option>
     <option value="never">never</option>
   </select>
@@ -26,6 +26,7 @@ const MARKUP = `
 export default {
   register(reg) {
     let ui = null;
+    let api = null;
 
     // approve-for-me stands alone (it implies workspace-write + on-request);
     // bypass overrides everything. Disabled controls are also left out of ext().
@@ -42,7 +43,8 @@ export default {
       id: 'codex-policy',
       at: 'advanced',
 
-      mount(el) {
+      mount(el, hostApi) {
+        api = hostApi;
         el.innerHTML = MARKUP;
         const q = (id) => el.querySelector(`#${id}`);
         ui = {
@@ -58,30 +60,36 @@ export default {
       },
 
       // ctx: { mode, draft, agents }. Hide for anything but Codex. Switching TO
-      // Codex resets the controls (the plan's "prefill on agent switch", with
-      // nothing to prefill from); re-renders while Codex stays keep the edits.
+      // Codex prefills from the settings as they are now; re-renders while
+      // Codex stays keep the edits.
       update(el, ctx) {
         if (!ui) return;
         const codex = ctx?.draft?.agent === 'codex';
         el.hidden = !codex;
         if (codex && !ui.codex) {
-          ui.sandbox.value = '';
-          ui.approval.value = '';
-          ui.approveForMe.checked = false;
-          ui.bypass.checked = false;
+          const s = api?.settings?.() || {};
+          ui.sandbox.value = s.sandbox || '';
+          ui.approval.value = s.approval || '';
+          ui.approveForMe.checked = s.approveForMe === true;
+          ui.bypass.checked = s.bypass === true;
           sync();
         }
         ui.codex = codex;
       },
 
+      // Every field, always: the server half stores this as-is, so an unticked
+      // box really is off even when Settings has it on.
       ext() {
         if (!ui || !ui.codex) return null;
-        if (ui.bypass.checked) return { bypass: true };
-        if (ui.approveForMe.checked) return { approveForMe: true };
-        const out = {};
-        if (ui.sandbox.value) out.sandbox = ui.sandbox.value;
-        if (ui.approval.value) out.approval = ui.approval.value;
-        return out;
+        const bypass = ui.bypass.checked;
+        const approveForMe = !bypass && ui.approveForMe.checked;
+        const plain = !bypass && !approveForMe;
+        return {
+          sandbox: plain ? ui.sandbox.value : '',
+          approval: plain ? ui.approval.value : '',
+          approveForMe,
+          bypass,
+        };
       },
     });
   },

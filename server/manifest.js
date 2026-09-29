@@ -7,8 +7,8 @@ export const dir = fileURLToPath(new URL('..', import.meta.url));
 
 // `ext` is THIS extension's slice of the dialog's `{ [extId]: data }` bag (core
 // narrows it in hookPayloadFor), null when the browser sent none: spawn_session,
-// a scheduled dispatch, an older tab. Empty fields fall back to the settings
-// either way. `host` is our façade.
+// a scheduled dispatch, an older tab — and only then do the settings apply; a
+// dialog's ext is stored as sent. `host` is our façade.
 export function onBeforeDispatch({ sessionId, agent, ext, host }) {
   if (agent !== 'codex') return;
   host.stores.policies.set(sessionId, withDefaults(ext, host.settings));
@@ -40,8 +40,9 @@ export default {
   help: 'These settings are the defaults a dispatch starts from; unset means core\'s default (workspace-write, never ask). The policy is re-read on every resume, so disabling this extension reverts sessions to core defaults.',
   dir,
   requires: [],
-  // 1.12.0 is where the `codexPolicy` manifest key landed.
-  engines: { wranglerApi: '^1.12.0' },
+  // 1.12.0 added the `codexPolicy` manifest key; 1.13.0 the client's
+  // api.settings(), which the dialog prefills from.
+  engines: { wranglerApi: '^1.13.0' },
   settings: [
     {
       key: 'sandbox', type: 'select', label: 'Default sandbox',
