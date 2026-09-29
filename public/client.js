@@ -18,8 +18,8 @@ const MARKUP = `
     <option value="on-request">on-request</option>
     <option value="never">never</option>
   </select>
-  <label><input type="checkbox" id="acp-approve-for-me"> Approve for me (auto review, workspace-write)</label>
-  <label><input type="checkbox" id="acp-bypass"> Bypass sandbox and approvals</label>
+  <label class="check-row"><input type="checkbox" id="acp-approve-for-me"> Approve for me (auto review, workspace-write)</label>
+  <label class="check-row"><input type="checkbox" id="acp-bypass"> Bypass sandbox and approvals</label>
   <p id="acp-danger" hidden>Runs without sandbox or approvals.</p>
 </div>`;
 
