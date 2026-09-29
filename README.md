@@ -4,8 +4,8 @@ An [Agent Wrangler](https://github.com/alex-pezarro-portswigger/agent-wrangler) 
 that lets you pick Codex's **sandbox**, **approval policy**, **approve-for-me** and
 **bypass** per session, from the dispatch dialog's *Advanced options*.
 
-Requires an Agent Wrangler server serving host API **^1.12.0** (the `codexPolicy`
-manifest hook). An older server refuses to load it.
+Requires an Agent Wrangler server serving host API **^1.13.0** (the `codexPolicy`
+manifest hook and the client's `api.settings()`). An older server refuses to load it.
 
 ## Install
 
@@ -16,8 +16,8 @@ checkout. The install directory must be named `aw-codex-policy`.
 
 - The extension's settings are the defaults a Codex dispatch starts from. Unset means
   core's default: `--sandbox workspace-write --ask-for-approval never`.
-- The dialog shows the controls for Codex drafts only. It cannot read the settings, so
-  it starts empty: an empty select or unticked box means "use the setting".
+- The dialog shows the controls for Codex drafts only, prefilled from the settings.
+  What it sends is the whole policy, so unticking a box turns it off for that dispatch.
 - The chosen policy is stored per session (`<AW_DATA_DIR>/aw-codex-policy/policies.json`),
   copied to forks and deleted on purge. Dispatches without the dialog (`spawn_session`,
   schedules) get the settings defaults.

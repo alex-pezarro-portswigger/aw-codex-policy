@@ -17,7 +17,7 @@ function fakeHost(values = {}) {
 
 test('manifest shape', () => {
   assert.equal(manifest.id, 'aw-codex-policy');
-  assert.equal(manifest.engines.wranglerApi, '^1.12.0');
+  assert.equal(manifest.engines.wranglerApi, '^1.13.0');
   assert.equal(typeof manifest.codexPolicy, 'function');
   assert.deepEqual(manifest.settings.map((s) => [s.key, s.type]), [
     ['sandbox', 'select'], ['approval', 'select'], ['approveForMe', 'toggle'], ['bypass', 'toggle'],
@@ -39,10 +39,10 @@ test('store: get, set, copy, delete, and it persists', () => {
   assert.equal(new PolicyStore({ file }).get('a'), undefined);
 });
 
-test('onBeforeDispatch stores ext, filling empty fields from settings', () => {
-  const host = fakeHost({ sandbox: 'read-only', approval: 'on-request' });
-  onBeforeDispatch({ sessionId: 's1', agent: 'codex', ext: { sandbox: 'danger-full-access' }, host });
-  assert.deepEqual(host.stores.policies.get('s1'), { sandbox: 'danger-full-access', approval: 'on-request' });
+test('onBeforeDispatch stores ext as sent, never merging settings', () => {
+  const host = fakeHost({ sandbox: 'read-only', approval: 'on-request', bypass: true });
+  onBeforeDispatch({ sessionId: 's1', agent: 'codex', ext: { sandbox: 'danger-full-access', approval: '', approveForMe: false, bypass: false }, host });
+  assert.deepEqual(host.stores.policies.get('s1'), { sandbox: 'danger-full-access' });
 });
 
 test('onBeforeDispatch stores the settings defaults when ext is null', () => {

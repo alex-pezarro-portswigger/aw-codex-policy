@@ -20,15 +20,14 @@ export function settingsDefaults(settings) {
   return cleanPolicy(settings?.all?.() || {});
 }
 
-// Fields the dialog left empty fall back to the settings one by one: the
-// browser half cannot read settings, so it sends only what the human picked.
-// A ticked approve-for-me or bypass in the dialog replaces the defaults
-// outright, since the dialog disables the other controls under it.
+// The dialog's choice is the whole policy (it prefills from the settings and
+// sends every field), so it never merges with them. Only a dispatch with no
+// dialog (ext null) gets the settings defaults.
 export function withDefaults(picked, settings) {
-  const own = cleanPolicy(picked);
-  if (own.bypass) return { bypass: true };
-  if (own.approveForMe) return { approveForMe: true };
-  return { ...settingsDefaults(settings), ...own };
+  const p = picked == null ? settingsDefaults(settings) : cleanPolicy(picked);
+  if (p.bypass) return { bypass: true };
+  if (p.approveForMe) return { approveForMe: true };
+  return p;
 }
 
 // Core's own launch flags: workspace-write + never, no approve-for-me/bypass.
