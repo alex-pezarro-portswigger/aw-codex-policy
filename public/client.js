@@ -55,6 +55,7 @@ export default {
           approveForMe: q('acp-approve-for-me'),
           bypass: q('acp-bypass'),
           danger: q('acp-danger'),
+          root: el.querySelector('.acp-field'),
           codex: false,
         };
         for (const box of [ui.approveForMe, ui.bypass]) box.addEventListener('change', sync);
@@ -67,7 +68,10 @@ export default {
       update(el, ctx) {
         if (!ui) return;
         const codex = ctx?.draft?.agent === 'codex';
+        // core's .ext-slot is display: contents, which beats [hidden], so
+        // hide our own wrapper too.
         el.hidden = !codex;
+        ui.root.hidden = !codex;
         if (codex && !ui.codex) {
           const s = api?.settings?.() || {};
           ui.sandbox.value = s.sandbox || '';
